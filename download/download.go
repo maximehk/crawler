@@ -10,7 +10,7 @@ const MaxWorkers = 5
 
 type Response struct {
 	Url  string
-	Data string
+	Data []byte
 }
 
 func download(url string) (response Response) {
@@ -24,7 +24,7 @@ func download(url string) (response Response) {
 	defer resp.Body.Close()
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(resp.Body)
-	response.Data = buf.String()
+	response.Data = buf.Bytes()
 	log.Println("Downloaded ", url)
 	return
 }

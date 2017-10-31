@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"github.com/maximehk/crawler/download"
@@ -11,8 +12,8 @@ import (
 	"sync"
 )
 
-func extractPics(body string) (picUrls []string) {
-	reader := strings.NewReader(body)
+func extractPics(body []byte) (picUrls []string) {
+	reader := bytes.NewReader(body)
 	xmlroot, xmlerr := xmlpath.ParseHTML(reader)
 	if xmlerr != nil {
 		log.Fatal(xmlerr)

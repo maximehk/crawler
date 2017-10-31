@@ -10,9 +10,7 @@ import (
 	"sync"
 )
 
-func extractPics(body string) []string {
-	picUrls := make([]string, 0)
-
+func extractPics(body string) (picUrls []string) {
 	reader := strings.NewReader(body)
 	xmlroot, xmlerr := xmlpath.ParseHTML(reader)
 	if xmlerr != nil {
@@ -29,12 +27,11 @@ func extractPics(body string) []string {
 			picUrls = append(picUrls, url)
 		}
 	}
-	return picUrls
+	return
 }
 
 func main() {
 	testUrls := [1]string{"http://...url of a website with pics.net/"}
-
 	urls := make(chan string, 99)
 	responses := make(chan download.Response)
 	go download.Downloader(urls, responses)

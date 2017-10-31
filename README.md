@@ -1,3 +1,5 @@
 # Experimenting with golang
 
-Learning about go concurrency and standard library.
+Experimenting with go concurrency and standard library.
+
+*this is my first golang project...*

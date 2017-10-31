@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/maximehk/crawler/download"
 	"gopkg.in/xmlpath.v2"
@@ -31,26 +32,26 @@ func extractPics(body string) (picUrls []string) {
 }
 
 func main() {
-	testUrls := [1]string{"http://...url of a website with pics.net/"}
-	urls := make(chan string, 99)
+	var requestedUrl = flag.String("url", "", "url of a website with pics")
+	flag.Parse()
+
+	urls := make(chan string)
 	responses := make(chan download.Response)
 	go download.Downloader(urls, responses)
 
-	for _, url := range testUrls {
-		urls <- url
-	}
+	// Download the requested page and extract the image URLs
+	urls <- *requestedUrl
+	resp := <-responses
+	picUrls := extractPics(resp.Data)
 
-	var picUrls []string
+	// Enqueue URLs asynchronously and move on to processing the result
+	go func() {
+		for _, url := range picUrls {
+			urls <- url
+		}
+	}()
 
-	for i := 0; i < len(testUrls); i++ {
-		resp := <-responses
-		picUrls = append(picUrls, extractPics(resp.Data)...)
-	}
-
-	for _, url := range picUrls {
-		urls <- url
-	}
-
+	// Save the results to disk
 	var wg sync.WaitGroup
 	for i := 0; i < len(picUrls); i++ {
 		wg.Add(1)
@@ -64,5 +65,4 @@ func main() {
 
 	}
 	wg.Wait()
-
 }

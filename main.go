@@ -8,20 +8,19 @@ import (
 	"gopkg.in/xmlpath.v2"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"sync"
 )
 
-func extractPics(body []byte) (picUrls []string) {
-	reader := bytes.NewReader(body)
-	xmlroot, xmlerr := xmlpath.ParseHTML(reader)
-	if xmlerr != nil {
-		log.Fatal(xmlerr)
+func extractPics(content download.Response) (picUrls []string) {
+	reader := bytes.NewReader(content.Data)
+	xmlroot, err := xmlpath.ParseHTML(reader)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	var xpath string
-	xpath = `//img/@src`
-	path := xmlpath.MustCompile(xpath)
+	path := xmlpath.MustCompile(`//img/@src`)
 	iter := path.Iter(xmlroot)
 	for iter.Next() {
 		url := iter.Node().String()
@@ -30,6 +29,13 @@ func extractPics(body []byte) (picUrls []string) {
 		}
 	}
 	return
+}
+
+func createDir(dirPath string) {
+	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
+		os.Mkdir(dirPath, 0700)
+	}
+
 }
 
 func main() {
@@ -43,7 +49,7 @@ func main() {
 	// Download the requested page and extract the image URLs
 	urls <- *requestedUrl
 	resp := <-responses
-	picUrls := extractPics(resp.Data)
+	picUrls := extractPics(resp)
 
 	// Enqueue URLs asynchronously and move on to processing the result
 	go func() {
@@ -53,16 +59,21 @@ func main() {
 	}()
 
 	// Save the results to disk
+  createDir("img")
 	var wg sync.WaitGroup
 	for i := 0; i < len(picUrls); i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			resp := <-responses
+			if resp.Error != nil {
+				log.Println(resp.Error)
+				return
+			}
 			filename := fmt.Sprintf("img/img_%d.jpg", i+1)
 			err := ioutil.WriteFile(filename, []byte(resp.Data), 0644)
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			}
 			fmt.Println("file saved to ", filename)
 		}(i)

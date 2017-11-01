@@ -11,6 +11,7 @@ const MaxWorkers = 5
 type Response struct {
 	Url  string
 	Data []byte
+  Error error
 }
 
 func download(url string) (response Response) {
@@ -18,7 +19,8 @@ func download(url string) (response Response) {
 	response.Url = url
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+    response.Error = err
+    return
 	}
 
 	defer resp.Body.Close()
